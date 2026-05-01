@@ -847,29 +847,84 @@ async function generatePreview() {
 async function printNow() {
   await generatePreview();
 
-  // Inject exact @page size for TVS LP 40 Lite thermal printer
-  const paperSize = (document.getElementById('labelPaperSize')?.value) || '50mm 25mm';
-  let ps = document.getElementById('_lpStyle');
-  if (!ps) { ps = document.createElement('style'); ps.id = '_lpStyle'; document.head.appendChild(ps); }
-  // Top-level @page overrides the @media print @page in stylesheet
-  ps.textContent = paperSize !== 'auto'
-    ? `@page { size: ${paperSize}; margin: 0; }`
-    : '';
+  const printArea = document.getElementById('printArea');
+  if (!printArea?.innerHTML.trim()) { showToast('Queue is empty', 'error'); return; }
 
-  const deduct = document.getElementById('deductStock').value === '1';
-  // Save print job (and optionally deduct stock)
-  try {
-    await apiFetch('/api/print-jobs', 'POST', {
-      items: state.queue.map(q => ({ productId: q.product.id, qty: q.qty })),
-      deductStock: deduct,
-    });
+  const paperSize = document.getElementById('labelPaperSize')?.value || '50mm 25mm';
+  const deduct    = document.getElementById('deductStock').value === '1';
+
+  // Open a blank popup — blank title means Chrome prints NO header/footer text.
+  // This eliminates the URL/page-number labels that appear on the roll.
+  const pw = window.open('', '_blank', 'width=1,height=1,left=0,top=0');
+  if (!pw) { showToast('Allow popups for this page to enable printing', 'error'); return; }
+
+  // All print CSS is self-contained in the popup — never touches the main window
+  const pageCSS = `
+    @page { size: ${paperSize}; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #fff; }
+    .label-preview-area { display: block; width: 100%; }
+    .lbl {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000; background: #fff;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      width: 100%; padding: 1mm 1.5mm;
+      page-break-after: always; break-after: page;
+      page-break-inside: avoid; break-inside: avoid;
+      overflow: hidden;
+    }
+    .lbl:last-child { page-break-after: auto; break-after: auto; }
+    .l-header {
+      font-size: 6.5pt; font-weight: 900; text-transform: uppercase;
+      line-height: 1.2; word-break: break-word; width: 100%; margin-bottom: 0.3mm;
+    }
+    .l-mrp-line { font-size: 7pt; font-weight: 900; width: 100%; margin-bottom: 0.3mm; }
+    .l-barcode  { width: 100%; margin: 0.4mm 0; }
+    .l-barcode img {
+      width: 100%; height: auto; display: block;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .l-serial {
+      font-family: 'Courier New', monospace;
+      font-size: 5pt; font-weight: 700; letter-spacing: 0.06em;
+      width: 100%; margin-top: 0.3mm;
+    }
+    .l-detail { font-size: 4.5pt; color: #444; width: 100%; margin-bottom: 0.2mm; }
+    .l-inc    { font-size: 4pt;   color: #888; width: 100%; margin-top: 0.2mm;    }
+    .l-sku    { display: none; }
+  `;
+
+  pw.document.write(
+    `<!DOCTYPE html><html><head><title></title><style>${pageCSS}</style></head>` +
+    `<body>${printArea.innerHTML}</body></html>`
+  );
+  pw.document.close();
+
+  // Poll until every barcode image has fully loaded, then print
+  const waitAndPrint = () => {
+    const imgs = Array.from(pw.document.images);
+    const ready = imgs.length > 0 && imgs.every(img => img.complete && img.naturalWidth > 0);
+    if (ready) {
+      pw.print();
+      setTimeout(() => { if (!pw.closed) pw.close(); }, 3000);
+    } else {
+      setTimeout(waitAndPrint, 150);
+    }
+  };
+  setTimeout(waitAndPrint, 400);
+
+  // Save print job + optional stock deduction (non-blocking)
+  apiFetch('/api/print-jobs', 'POST', {
+    items: state.queue.map(q => ({ productId: q.product.id, qty: q.qty })),
+    deductStock: deduct,
+  }).then(() => {
     if (deduct) {
-      showToast('Stock updated for printed products', 'success');
+      showToast('Stock updated', 'success');
       if (state.activePage === 'products') loadProducts();
     }
-  } catch (e) { /* non-fatal */ }
-
-  setTimeout(() => window.print(), 700);
+  }).catch(() => {});
 }
 
 function showDeductBanner() {
