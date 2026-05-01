@@ -741,12 +741,24 @@ function autoRefreshPreview() {
   autoPreviewTimer = setTimeout(generatePreview, 600);
 }
 
+// Barcode height (bwip-js height param) and preview width mapped per paper size
+const PAPER_SPECS = {
+  '38mm 25mm': { barcodeH: 18, w: 38, h: 25 },
+  '40mm 20mm': { barcodeH: 15, w: 40, h: 20 },
+  '40mm 25mm': { barcodeH: 18, w: 40, h: 25 },
+  '50mm 25mm': { barcodeH: 20, w: 50, h: 25 },
+  '57mm 32mm': { barcodeH: 26, w: 57, h: 32 },
+  'auto':      { barcodeH: 22, w: 57, h: 32 },
+};
+
 async function generatePreview() {
   if (!state.queue.length) { showToast('Print queue is empty', 'error'); return; }
-  const cols = document.getElementById('labelCols').value;
-  const size = document.getElementById('labelSize').value;
+  const cols    = document.getElementById('labelCols').value;
   const showMrp = document.getElementById('showMrp').value === '1';
   const showGst = document.getElementById('showGst').value === '1';
+  const paperSize = document.getElementById('labelPaperSize')?.value || '38mm 25mm';
+  const spec = PAPER_SPECS[paperSize] || PAPER_SPECS['38mm 25mm'];
+
   const preview = document.getElementById('labelPreview');
   const pc = document.getElementById('previewCount');
   preview.className = `label-preview-area cols-${cols}`;
@@ -757,34 +769,36 @@ async function generatePreview() {
     for (let i = 0; i < item.qty; i++) labels.push(item.product);
   }
 
-  // Barcode height — taller = more prominent, better for thermal scanners
-  const barcodeH = { small: 12, medium: 18, large: 26 }[size] || 18;
+  // Preview width: show label at 4px per mm so it looks like the real label
+  const previewW = spec.w * 4;
+  const previewH = spec.h * 4;
 
   const labelsHtml = labels.map(p => {
     const detail = [p.color, p.size, p.model_no].filter(Boolean).join(' · ');
     const hasDiscount = p.selling_price && p.selling_price < p.mrp;
 
-    // BRAND:PRODUCT NAME — exact Samsung format (colon, no space, all caps)
+    // BRAND:PRODUCT NAME — Samsung format: colon, no space, all caps
     const header = p.brand
       ? `${p.brand.toUpperCase()}:${p.name.toUpperCase()}`
       : p.name.toUpperCase();
 
-    // MRP:599.00 — Samsung colon style, 2 decimal places, no currency symbol
+    // MRP:599.00 — colon style, 2 decimal places
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
-    const spFmt  = hasDiscount ? `SP:${Number(p.selling_price).toFixed(2)}` : '';
+    const spFmt  = hasDiscount ? `  SP:${Number(p.selling_price).toFixed(2)}` : '';
 
     const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
-    // scale=3 gives higher-res barcode PNG, better for thermal print
-    const barcodeUrl  = `/api/barcode/${barcodeCode}?scale=3&height=${barcodeH}`;
+    // scale=3 → high-res PNG that thermal printer can render crisply
+    const barcodeUrl = `/api/barcode/${barcodeCode}?scale=3&height=${spec.barcodeH}`;
+
+    // Inline preview size mimics the actual label paper dimensions
+    const labelStyle = `width:${previewW}px;min-height:${previewH}px;font-size:${Math.max(7, spec.w * 0.22)}px;`;
 
     return `
-      <div class="lbl size-${size}">
+      <div class="lbl" style="${labelStyle}">
         <div class="l-header">${escHtml(header)}</div>
         ${detail ? `<div class="l-detail">${escHtml(detail)}</div>` : ''}
-        ${showMrp ? `<div class="l-mrp-line">${escHtml(mrpFmt)}${spFmt ? ' / ' + escHtml(spFmt) : ''}</div>` : ''}
-        <div class="l-barcode">
-          <img src="${barcodeUrl}" alt="barcode" />
-        </div>
+        ${showMrp ? `<div class="l-mrp-line">${escHtml(mrpFmt + spFmt)}</div>` : ''}
+        <div class="l-barcode"><img src="${barcodeUrl}" alt="barcode" loading="lazy" /></div>
         <div class="l-serial">${escHtml(p.serial_no || p.sku)}</div>
         ${showMrp && showGst && p.gst_rate ? `<div class="l-inc">Incl. ${p.gst_rate}% GST${p.hsn_code ? ' · HSN ' + escHtml(p.hsn_code) : ''}</div>` : ''}
       </div>
@@ -793,14 +807,36 @@ async function generatePreview() {
 
   preview.innerHTML = labelsHtml;
 
-  // Populate printArea so window.print() shows only labels
+  // Populate printArea (used by window.print) — no inline size styles for print
+  const printLabelsHtml = labels.map(p => {
+    const detail = [p.color, p.size, p.model_no].filter(Boolean).join(' · ');
+    const hasDiscount = p.selling_price && p.selling_price < p.mrp;
+    const header = p.brand
+      ? `${p.brand.toUpperCase()}:${p.name.toUpperCase()}`
+      : p.name.toUpperCase();
+    const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
+    const spFmt  = hasDiscount ? `  SP:${Number(p.selling_price).toFixed(2)}` : '';
+    const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
+    const barcodeUrl = `/api/barcode/${barcodeCode}?scale=3&height=${spec.barcodeH}`;
+    return `
+      <div class="lbl">
+        <div class="l-header">${escHtml(header)}</div>
+        ${detail ? `<div class="l-detail">${escHtml(detail)}</div>` : ''}
+        ${showMrp ? `<div class="l-mrp-line">${escHtml(mrpFmt + spFmt)}</div>` : ''}
+        <div class="l-barcode"><img src="${barcodeUrl}" alt="barcode" /></div>
+        <div class="l-serial">${escHtml(p.serial_no || p.sku)}</div>
+        ${showMrp && showGst && p.gst_rate ? `<div class="l-inc">Incl. ${p.gst_rate}% GST${p.hsn_code ? ' · HSN ' + escHtml(p.hsn_code) : ''}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
   const printArea = document.getElementById('printArea');
   if (printArea) {
-    const grid = document.createElement('div');
-    grid.className = `label-preview-area cols-${cols}`;
-    grid.innerHTML = labelsHtml;
+    const wrap = document.createElement('div');
+    wrap.className = 'label-preview-area';
+    wrap.innerHTML = printLabelsHtml;
     printArea.innerHTML = '';
-    printArea.appendChild(grid);
+    printArea.appendChild(wrap);
   }
 
   if (pc) pc.textContent = `— ${labels.length} label${labels.length !== 1 ? 's' : ''}`;

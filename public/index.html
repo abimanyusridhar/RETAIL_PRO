@@ -356,26 +356,19 @@
 
             <!-- Settings -->
             <div class="queue-actions">
-              <div class="form-section-title" style="margin-top:8px">Label Settings</div>
+              <div class="form-section-title" style="margin-top:8px">Print Settings</div>
 
-              <div class="form-row-2">
-                <div class="form-row">
-                  <label>Label Size</label>
-                  <select id="labelSize" onchange="autoRefreshPreview()">
-                    <option value="small">Small (50×25 mm)</option>
-                    <option value="medium" selected>Medium (75×40 mm)</option>
-                    <option value="large">Large (100×60 mm)</option>
-                  </select>
-                </div>
-                <div class="form-row">
-                  <label>Columns</label>
-                  <select id="labelCols" onchange="autoRefreshPreview()">
-                    <option value="1" selected>1 per row (single column)</option>
-                    <option value="2">2 per row</option>
-                    <option value="3">3 per row</option>
-                    <option value="4">4 per row</option>
-                  </select>
-                </div>
+              <!-- Paper size drives barcode height + preview scale -->
+              <div class="form-row">
+                <label>Label Paper Size (TVS LP 40 Lite)</label>
+                <select id="labelPaperSize" onchange="autoRefreshPreview()">
+                  <option value="38mm 25mm" selected>38 × 25 mm (standard roll)</option>
+                  <option value="40mm 25mm">40 × 25 mm</option>
+                  <option value="50mm 25mm">50 × 25 mm</option>
+                  <option value="57mm 32mm">57 × 32 mm</option>
+                  <option value="40mm 20mm">40 × 20 mm (small)</option>
+                  <option value="auto">Auto (printer dialog)</option>
+                </select>
               </div>
 
               <div class="form-row-2">
@@ -387,25 +380,17 @@
                   </select>
                 </div>
                 <div class="form-row">
-                  <label>Show GST Info</label>
+                  <label>Show GST</label>
                   <select id="showGst" onchange="autoRefreshPreview()">
+                    <option value="0" selected>No</option>
                     <option value="1">Yes</option>
-                    <option value="0">No</option>
                   </select>
                 </div>
               </div>
 
-              <div class="form-row">
-                <label>Label Paper Size (TVS LP 40 Lite)</label>
-                <select id="labelPaperSize">
-                  <option value="38mm 25mm" selected>38 × 25 mm (standard roll)</option>
-                  <option value="40mm 25mm">40 × 25 mm</option>
-                  <option value="50mm 25mm">50 × 25 mm</option>
-                  <option value="57mm 32mm">57 × 32 mm</option>
-                  <option value="40mm 20mm">40 × 20 mm (small)</option>
-                  <option value="auto">Auto (use printer dialog)</option>
-                </select>
-              </div>
+              <!-- Hidden but kept for JS compatibility -->
+              <select id="labelSize"  style="display:none"><option value="medium" selected>medium</option></select>
+              <select id="labelCols"  style="display:none"><option value="1" selected>1</option></select>
 
               <div class="form-row">
                 <label>Deduct Stock After Print</label>
