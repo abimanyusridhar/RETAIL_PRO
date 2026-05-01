@@ -1,0 +1,12 @@
+{"_id":"cat_ac","name":"Air Conditioners","icon":"❄️"}
+{"_id":"cat_acc","name":"Mobile Accessories","icon":"🔌"}
+{"_id":"cat_audio","name":"Audio & Headphones","icon":"🎧"}
+{"_id":"cat_cam","name":"Cameras","icon":"📷"}
+{"_id":"cat_furn","name":"Furniture","icon":"🪑"}
+{"_id":"cat_kit","name":"Kitchen Appliances","icon":"🍳"}
+{"_id":"cat_lap","name":"Laptops & Computers","icon":"💻"}
+{"_id":"cat_mob","name":"Mobiles","icon":"📱"}
+{"_id":"cat_other","name":"Other Electronics","icon":"⚡"}
+{"_id":"cat_ref","name":"Refrigerators","icon":"🧊"}
+{"_id":"cat_tv","name":"Televisions","icon":"📺"}
+{"_id":"cat_wm","name":"Washing Machines","icon":"🫧"}

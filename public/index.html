@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RetailTag Pro — Inventory & Label Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ══════════════════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">RT</div>
+      <div>
+        <span class="logo-text">Retail<strong>Tag</strong></span>
+        <span class="logo-sub">Inventory &amp; Labels</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+        Dashboard
+      </a>
+      <a href="#" class="nav-item" data-page="products">
+        <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+        Products
+      </a>
+      <a href="#" class="nav-item" data-page="add-product">
+        <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+        Add Product
+      </a>
+      <a href="#" class="nav-item" data-page="print">
+        <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span>
+        Print Labels
+      </a>
+    </nav>
+
+    <div class="sidebar-cats" id="sidebarCats">
+      <div class="cats-title">Categories</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ══════════════════════════════════════════════════════════════ -->
+  <main class="main" id="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()" title="Menu">☰</button>
+      <div class="search-wrap">
+        <input type="text" id="globalSearch" placeholder="Search by name, brand, SKU, serial…" oninput="globalSearchFn(this.value)" />
+        <span class="search-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      </div>
+      <div class="topbar-right">
+        <span class="badge-count" id="queueBadge" onclick="goPage('print')" title="Go to print queue">0 in queue</span>
+        <button class="btn-primary" onclick="goPage('print')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Queue
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ DASHBOARD ══════════════════════════════════════════════════════ -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Dashboard</h1>
+          <p>Retail inventory overview &amp; quick actions</p>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <!-- Charts + Quick Actions -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Products by Category</div>
+          <div id="catChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quick Actions</div>
+          <div class="quick-actions">
+            <button class="qa-btn" onclick="goPage('add-product')">
+              <span class="qa-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+              <div><span class="qa-label">Add Product</span><span class="qa-desc">Create a new inventory item</span></div>
+            </button>
+            <button class="qa-btn" onclick="goPage('products')">
+              <span class="qa-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+              <div><span class="qa-label">View Products</span><span class="qa-desc">Browse &amp; manage inventory</span></div>
+            </button>
+            <button class="qa-btn" onclick="goPage('print')">
+              <span class="qa-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span>
+              <div><span class="qa-label">Print Labels</span><span class="qa-desc">Build queue &amp; print barcode labels</span></div>
+            </button>
+            <button class="qa-btn" onclick="viewLowStock()">
+              <span class="qa-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+              <div><span class="qa-label">Low Stock</span><span class="qa-desc">View items needing restock</span></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alerts -->
+      <div class="card" id="lowStockCard" style="display:none">
+        <div class="card-title">Low Stock Alerts <span id="lowStockBadge" class="tag" style="background:var(--danger)">0</span></div>
+        <div class="low-stock-grid" id="lowStockList"></div>
+      </div>
+
+      <!-- Print History -->
+      <div class="card">
+        <div class="card-title">Recent Print Jobs</div>
+        <div id="printHistory"><div class="empty-msg" style="padding:16px 0">No print jobs yet.</div></div>
+      </div>
+    </div>
+
+    <!-- ══ PRODUCTS ═══════════════════════════════════════════════════════ -->
+    <div id="page-products" class="page">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Products</h1>
+          <p>Manage inventory — serial numbers, barcodes &amp; stock levels</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-primary" onclick="goPage('add-product')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Product
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <select id="catFilter" onchange="filterChanged()">
+          <option value="">All Categories</option>
+        </select>
+        <input type="text" id="prodSearch" placeholder="Search name, brand, SKU, serial…" oninput="filterChanged()" style="max-width:320px" />
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" id="prodTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Reference</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="prodTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- ══ ADD / EDIT PRODUCT ══════════════════════════════════════════════ -->
+    <div id="page-add-product" class="page">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 id="formTitle">Add Product</h1>
+          <p id="formSubtitle">Fill in the details — Serial No., SKU &amp; Barcode are auto-generated on save</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-outline" onclick="goPage('products')">← Back</button>
+        </div>
+      </div>
+
+      <input type="hidden" id="editId" />
+
+      <div class="form-grid">
+
+        <!-- LEFT: Basic Info -->
+        <div>
+          <div class="form-card" style="margin-bottom:14px">
+            <div class="form-section-title">Basic Information</div>
+
+            <div class="form-row" id="row-name">
+              <label>Product Name <span class="req">*</span></label>
+              <input type="text" id="f-name" placeholder="e.g. Samsung Galaxy S24 5G"
+                oninput="clearFieldError('row-name')" />
+              <span class="field-error" id="err-name"></span>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-row" id="row-brand">
+                <label>Brand <span class="req">*</span></label>
+                <input type="text" id="f-brand" placeholder="Samsung"
+                  oninput="clearFieldError('row-brand')" />
+                <span class="field-error" id="err-brand"></span>
+              </div>
+              <div class="form-row">
+                <label>Model No.</label>
+                <input type="text" id="f-model" placeholder="SM-S921B" />
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-row">
+                <label>Category <span class="req">*</span></label>
+                <select id="f-cat"></select>
+              </div>
+              <div class="form-row">
+                <label>Color / Finish</label>
+                <input type="text" id="f-color" placeholder="Phantom Black" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>Size / Variant</label>
+              <input type="text" id="f-size" placeholder="128GB / XL / 1.5 Ton" />
+            </div>
+
+            <div class="form-row">
+              <label>Description</label>
+              <textarea id="f-desc" rows="2" placeholder="Short product description…"></textarea>
+            </div>
+          </div>
+
+          <!-- Auto-generated IDs (shown when editing) -->
+          <div class="form-card" id="identifiersCard" style="display:none">
+            <div class="form-section-title">Product Identifiers</div>
+            <div class="form-row-2">
+              <div class="form-row">
+                <label>Serial No.</label>
+                <input type="text" id="f-serial" readonly />
+              </div>
+              <div class="form-row">
+                <label>SKU Code</label>
+                <input type="text" id="f-sku" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Pricing + Inventory -->
+        <div>
+          <div class="form-card" style="margin-bottom:14px">
+            <div class="form-section-title">Pricing</div>
+
+            <div class="form-row" id="row-mrp">
+              <label>MRP (₹) <span class="req">*</span></label>
+              <input type="number" id="f-mrp" placeholder="79999" min="0" step="0.01"
+                oninput="clearFieldError('row-mrp'); updatePriceHint()" />
+              <span class="field-error" id="err-mrp"></span>
+            </div>
+
+            <div class="form-row">
+              <label>Selling Price (₹)</label>
+              <input type="number" id="f-price" placeholder="74999" min="0" step="0.01"
+                oninput="updatePriceHint()" />
+              <span class="field-hint" id="priceHint">Leave blank to use MRP</span>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-row">
+                <label>GST Rate (%)</label>
+                <select id="f-gst">
+                  <option value="0">0% — Exempt</option>
+                  <option value="5">5%</option>
+                  <option value="12">12%</option>
+                  <option value="18" selected>18%</option>
+                  <option value="28">28%</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>HSN Code</label>
+                <input type="text" id="f-hsn" placeholder="8517" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-card" style="margin-bottom:14px">
+            <div class="form-section-title">Inventory / Stock</div>
+
+            <div class="form-row">
+              <label>Opening Stock Quantity</label>
+              <input type="number" id="f-stock" placeholder="0" min="0" />
+              <span class="field-hint">Number of units currently in stock</span>
+            </div>
+          </div>
+
+          <div class="form-card" style="background:var(--accent-bg);border-color:var(--accent-border)">
+            <div class="auto-gen-strip" style="margin-bottom:0;background:transparent;border:none;padding:0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <div>
+                <strong style="display:block;margin-bottom:2px">Auto-generated on save</strong>
+                Each product gets a unique <strong>Serial No.</strong> (YYYYMMDDNNNN) and a <strong>SKU</strong> (CAT-YYYYMMDD-NNNN) used for the barcode label.
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:16px">
+              <button class="btn-primary" onclick="saveProduct()">Save Product</button>
+              <button class="btn-success" id="btnAddAnother" onclick="saveAndAddAnother()">Save &amp; Add Another</button>
+              <button class="btn-outline" onclick="clearForm()">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PRINT LABELS ════════════════════════════════════════════════════ -->
+    <div id="page-print" class="page">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Print Labels</h1>
+          <p>Build your print queue, configure labels &amp; print</p>
+        </div>
+      </div>
+
+      <div class="print-layout">
+
+        <!-- Left Column: Quick Add + Queue + Settings -->
+        <div class="print-left">
+
+          <!-- Quick Add to Queue -->
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-title">Quick Add to Queue</div>
+            <div class="queue-search-wrap">
+              <input type="text" id="queueSearch" placeholder="Search product by name, SKU or brand…"
+                oninput="searchForQueue(this.value)" autocomplete="off" />
+              <span class="queue-search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+            </div>
+            <div class="qsr-list" id="queueSearchResults"></div>
+          </div>
+
+          <!-- Queue + Settings -->
+          <div class="card">
+            <div class="card-title">
+              Print Queue
+              <span id="queueCount" class="tag">0 items</span>
+            </div>
+
+            <!-- Queue items -->
+            <div id="queueList">
+              <div class="queue-empty">No products in queue.<br>Use search above or go to Products page.</div>
+            </div>
+
+            <!-- Queue Summary -->
+            <div id="queueSummary" style="display:none">
+              <div class="queue-summary">
+                <div class="queue-summary-row">
+                  <span class="qs-label">Products in queue</span>
+                  <span class="qs-val" id="qsTotalProducts">0</span>
+                </div>
+                <div class="queue-summary-row total">
+                  <span class="qs-label">Total labels to print</span>
+                  <span class="qs-val" id="qsTotalLabels">0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="queue-actions">
+              <div class="form-section-title" style="margin-top:8px">Label Settings</div>
+
+              <div class="form-row-2">
+                <div class="form-row">
+                  <label>Label Size</label>
+                  <select id="labelSize" onchange="autoRefreshPreview()">
+                    <option value="small">Small (50×25 mm)</option>
+                    <option value="medium" selected>Medium (75×40 mm)</option>
+                    <option value="large">Large (100×60 mm)</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label>Columns</label>
+                  <select id="labelCols" onchange="autoRefreshPreview()">
+                    <option value="1" selected>1 per row (single column)</option>
+                    <option value="2">2 per row</option>
+                    <option value="3">3 per row</option>
+                    <option value="4">4 per row</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-row">
+                  <label>Show MRP</label>
+                  <select id="showMrp" onchange="autoRefreshPreview()">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label>Show GST Info</label>
+                  <select id="showGst" onchange="autoRefreshPreview()">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label>Label Paper Size (LP 46 Lite)</label>
+                <select id="labelPaperSize">
+                  <option value="57mm 32mm" selected>57 × 32 mm (standard)</option>
+                  <option value="50mm 30mm">50 × 30 mm</option>
+                  <option value="40mm 25mm">40 × 25 mm (small)</option>
+                  <option value="75mm 40mm">75 × 40 mm (medium)</option>
+                  <option value="100mm 50mm">100 × 50 mm (large)</option>
+                  <option value="auto">Auto (use printer dialog)</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <label>Deduct Stock After Print</label>
+                <select id="deductStock" onchange="showDeductBanner()">
+                  <option value="0">No — keep stock unchanged</option>
+                  <option value="1">Yes — reduce stock by qty printed</option>
+                </select>
+              </div>
+              <div id="deductBanner" class="deduct-banner" style="display:none">
+                ⚠️ Stock will be reduced for each product after printing.
+              </div>
+
+              <button class="btn-primary" style="width:100%;margin-top:12px;justify-content:center" onclick="generatePreview()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+                Generate Preview
+              </button>
+              <button class="btn-print" onclick="printNow()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print Now
+              </button>
+              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:4px" onclick="clearQueue()">
+                Clear Queue
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Label Preview -->
+        <div class="print-right">
+          <div class="card" style="min-height:460px">
+            <div class="card-title">Label Preview <span id="previewCount" style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+            <div id="labelPreview" class="label-preview-area">
+              <div class="empty-msg">Add products to the queue and click <strong>"Generate Preview"</strong> to see labels here.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ PRODUCT DETAIL MODAL ══════════════════════════════════════════════ -->
+<div id="modal" class="modal-overlay" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="modalTitle">Product Details</span>
+      <button onclick="closeModal()" title="Close">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ═══ STOCK UPDATE MODAL ════════════════════════════════════════════════ -->
+<div id="stockModal" class="modal-overlay" onclick="closeStockModal()">
+  <div class="modal-box" style="width:420px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="stockModalTitle">Update Stock</span>
+      <button onclick="closeStockModal()" title="Close">✕</button>
+    </div>
+    <div style="padding:20px">
+      <input type="hidden" id="stockModalId" />
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Current Stock</div>
+        <div id="stockModalCurrent" style="font-size:36px;font-weight:700;font-family:var(--mono);color:var(--text)">0</div>
+        <div id="stockModalName" style="font-size:13px;color:var(--text2);margin-top:4px"></div>
+      </div>
+
+      <div class="stock-modal-section">
+        <div class="stock-modal-title">Adjust Stock</div>
+        <div class="stock-adj-row">
+          <span class="stk-label">New Stock</span>
+          <button class="stk-big-btn" onclick="stockModalAdj(-1)">−</button>
+          <input type="number" class="stk-input" id="stockModalVal" min="0" value="0" />
+          <button class="stk-big-btn" onclick="stockModalAdj(1)">+</button>
+        </div>
+        <div style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Quick set:</div>
+        <div class="stock-presets">
+          <button class="stock-preset-btn" onclick="stockModalSet(0)">Out of Stock (0)</button>
+          <button class="stock-preset-btn" onclick="stockModalSet(5)">+5 units</button>
+          <button class="stock-preset-btn" onclick="stockModalSet(10)">10 units</button>
+          <button class="stock-preset-btn" onclick="stockModalSet(25)">25 units</button>
+          <button class="stock-preset-btn" onclick="stockModalSet(50)">50 units</button>
+          <button class="stock-preset-btn" onclick="stockModalSet(100)">100 units</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn-primary" style="flex:1;justify-content:center" onclick="saveStockModal()">✓ Update Stock</button>
+        <button class="btn-outline" onclick="closeStockModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Hidden print area — only this is visible when window.print() is called -->
+<div id="printArea"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
