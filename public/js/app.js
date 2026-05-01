@@ -351,12 +351,18 @@ async function saveProduct() {
     if (id) {
       await apiFetch(`/api/products/${id}`, 'PUT', body);
       showToast('Product updated successfully!', 'success');
+      clearForm();
+      goPage('products');
     } else {
       const saved = await apiFetch('/api/products', 'POST', body);
-      showToast(`Saved! Serial: ${saved.serial_no || '—'}  SKU: ${saved.sku}`, 'success');
+      // Auto-add new product straight to print queue
+      state.queue.push({ product: saved, qty: 1 });
+      state.previewDirty = true;
+      updateQueueBadge();
+      showToast(`"${saved.name}" saved & added to print queue`, 'success');
+      clearForm();
+      goPage('print');
     }
-    clearForm();
-    goPage('products');
   } catch (e) {
     showToast('Failed to save product', 'error');
   }
@@ -367,7 +373,11 @@ async function saveAndAddAnother() {
   if (!body) return;
   try {
     const saved = await apiFetch('/api/products', 'POST', body);
-    showToast(`✓ Saved: ${saved.name} · ${saved.serial_no || ''} · ${saved.sku}`, 'success');
+    // Also add to print queue
+    state.queue.push({ product: saved, qty: 1 });
+    state.previewDirty = true;
+    updateQueueBadge();
+    showToast(`✓ Saved & queued: ${saved.name}`, 'success');
     clearForm();
     document.getElementById('f-name').focus();
   } catch (e) {
@@ -759,9 +769,9 @@ async function generatePreview() {
       ? `${p.brand.toUpperCase()}:${p.name.toUpperCase()}`
       : p.name.toUpperCase();
 
-    // MRP:₹599.00 — Samsung colon style, 2 decimal places
-    const mrpFmt = `MRP:₹${Number(p.mrp).toFixed(2)}`;
-    const spFmt  = hasDiscount ? `SP:₹${Number(p.selling_price).toFixed(2)}` : '';
+    // MRP:599.00 — Samsung colon style, 2 decimal places, no currency symbol
+    const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
+    const spFmt  = hasDiscount ? `SP:${Number(p.selling_price).toFixed(2)}` : '';
 
     const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
     // scale=3 gives higher-res barcode PNG, better for thermal print
@@ -801,12 +811,13 @@ async function generatePreview() {
 async function printNow() {
   await generatePreview();
 
-  // Inject exact @page size for LP 46 Lite thermal printer
-  const paperSize = (document.getElementById('labelPaperSize')?.value) || '57mm 32mm';
+  // Inject exact @page size for TVS LP 40 Lite thermal printer
+  const paperSize = (document.getElementById('labelPaperSize')?.value) || '38mm 25mm';
   let ps = document.getElementById('_lpStyle');
   if (!ps) { ps = document.createElement('style'); ps.id = '_lpStyle'; document.head.appendChild(ps); }
+  // Top-level @page overrides the @media print @page in stylesheet
   ps.textContent = paperSize !== 'auto'
-    ? `@media print { @page { size: ${paperSize}; margin: 0; } }`
+    ? `@page { size: ${paperSize}; margin: 0; }`
     : '';
 
   const deduct = document.getElementById('deductStock').value === '1';

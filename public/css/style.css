@@ -684,10 +684,11 @@ select option { background: #fff; }
 /* ─── Print Area (hidden in browser, shown when printing) ───── */
 #printArea { display: none; }
 
+/* ─── @page default — overridden at runtime by _lpStyle for TVS LP 40 Lite */
+@page { size: 38mm 25mm; margin: 0; }
+
 /* ─── PRINT — only labels, nothing else ─────────────────────── */
 @media print {
-  @page { margin: 2mm; size: auto; }
-
   /* Hide everything */
   body > .layout  { display: none !important; }
   body > #modal   { display: none !important; }
@@ -706,7 +707,7 @@ select option { background: #fff; }
   /* Label grid */
   #printArea .label-preview-area {
     display: grid !important;
-    gap: 4mm;
+    gap: 0;
     padding: 0;
   }
   #printArea .label-preview-area.cols-1 { grid-template-columns: 1fr !important; max-width: 100% !important; }
@@ -714,27 +715,31 @@ select option { background: #fff; }
   #printArea .label-preview-area.cols-3 { grid-template-columns: repeat(3,1fr) !important; }
   #printArea .label-preview-area.cols-4 { grid-template-columns: repeat(4,1fr) !important; }
 
-  /* Individual sticker — no border (physical label has its own edge) */
+  /* Individual sticker — no border, full page width for thermal roll */
   .lbl {
     border: none !important;
     background: #fff !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     display: flex !important;
-    padding: 3mm 2mm !important;
-    text-align: center !important;
+    flex-direction: column !important;
     align-items: center !important;
+    justify-content: center !important;
+    padding: 1.5mm 1.5mm !important;
+    text-align: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
-  /* Single column: one label per physical label paper */
-  #printArea .label-preview-area.cols-1 { gap: 0 !important; }
+  /* Single column: one label per physical label paper (thermal roll) */
   #printArea .label-preview-area.cols-1 .lbl {
     page-break-after: always !important;
     break-after: page !important;
-    width: 100% !important;
+    min-height: 100vh !important;
   }
   #printArea .label-preview-area.cols-1 .lbl:last-child {
     page-break-after: auto !important;
     break-after: auto !important;
+    min-height: unset !important;
   }
   .lbl .l-barcode img {
     image-rendering: pixelated;
@@ -743,8 +748,14 @@ select option { background: #fff; }
     width: 100% !important;
     height: auto !important;
   }
-  /* Keep SKU hidden on print too */
+  /* Keep SKU hidden on print */
   .lbl .l-sku { display: none !important; }
+  /* Tighten text sizes for small thermal labels */
+  .lbl .l-header   { font-size: 7pt !important; font-weight: 900 !important; }
+  .lbl .l-mrp-line { font-size: 7pt !important; font-weight: 900 !important; }
+  .lbl .l-serial   { font-size: 6pt !important; font-weight: 700 !important; }
+  .lbl .l-detail   { font-size: 5pt !important; }
+  .lbl .l-inc      { font-size: 5pt !important; }
 }
 
 /* ─── Responsive ────────────────────────────────────────────── */
