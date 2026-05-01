@@ -756,8 +756,8 @@ async function generatePreview() {
   const cols    = document.getElementById('labelCols').value;
   const showMrp = document.getElementById('showMrp').value === '1';
   const showGst = document.getElementById('showGst').value === '1';
-  const paperSize = document.getElementById('labelPaperSize')?.value || '38mm 25mm';
-  const spec = PAPER_SPECS[paperSize] || PAPER_SPECS['38mm 25mm'];
+  const paperSize = document.getElementById('labelPaperSize')?.value || '50mm 25mm';
+  const spec = PAPER_SPECS[paperSize] || PAPER_SPECS['50mm 25mm'];
 
   const preview = document.getElementById('labelPreview');
   const pc = document.getElementById('previewCount');
@@ -848,7 +848,7 @@ async function printNow() {
   await generatePreview();
 
   // Inject exact @page size for TVS LP 40 Lite thermal printer
-  const paperSize = (document.getElementById('labelPaperSize')?.value) || '38mm 25mm';
+  const paperSize = (document.getElementById('labelPaperSize')?.value) || '50mm 25mm';
   let ps = document.getElementById('_lpStyle');
   if (!ps) { ps = document.createElement('style'); ps.id = '_lpStyle'; document.head.appendChild(ps); }
   // Top-level @page overrides the @media print @page in stylesheet

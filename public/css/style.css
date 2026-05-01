@@ -685,7 +685,7 @@ select option { background: #fff; }
 #printArea { display: none; }
 
 /* ─── @page default — JS (_lpStyle) overrides per selected paper size ──── */
-@page { size: 38mm 25mm; margin: 0; }
+@page { size: 50mm 25mm; margin: 0; }
 
 /* ─── PRINT — only labels, nothing else ─────────────────────────────────── */
 @media print {
