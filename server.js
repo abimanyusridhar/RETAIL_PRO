@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const Datastore = require('nedb-promises');
 const { v4: uuidv4 } = require('uuid');
@@ -8,7 +9,15 @@ const bwipjs = require('bwip-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const dataDir = path.join(__dirname, 'data');
+// On Vercel the filesystem is read-only except /tmp
+const dataDir = process.env.VERCEL
+  ? '/tmp/retailtag-data'
+  : path.join(__dirname, 'data');
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const db = {
   categories: Datastore.create({ filename: path.join(dataDir, 'categories.db'), autoload: true }),
   products:   Datastore.create({ filename: path.join(dataDir, 'products.db'),   autoload: true }),
@@ -138,36 +147,27 @@ app.patch('/api/products/:id/stock', async (req, res) => {
   res.json({ id: req.params.id, stock: newStock });
 });
 
-// ── QR Code (primary) ─────────────────────────────────────────────────────────
+// ── QR Code ───────────────────────────────────────────────────────────────────
 app.get('/api/qr/:code', async (req, res) => {
   const { code } = req.params;
   const scale = Math.min(10, Math.max(2, parseInt(req.query.scale) || 4));
   try {
-    const png = await bwipjs.toBuffer({
-      bcid: 'qrcode',
-      text: code,
-      scale,
-      eclevel: 'M',
-    });
+    const png = await bwipjs.toBuffer({ bcid: 'qrcode', text: code, scale, eclevel: 'M' });
     res.set('Content-Type', 'image/png').set('Cache-Control', 'public,max-age=86400').send(png);
   } catch (e) {
     res.status(400).json({ error: 'QR generation failed' });
   }
 });
 
-// ── Linear barcode endpoint (CODE-128) ───────────────────────────────────────
+// ── Linear barcode (CODE-128) ─────────────────────────────────────────────────
 app.get('/api/barcode/:code', async (req, res) => {
   const { code } = req.params;
   const scale  = Math.min(4, Math.max(1, parseInt(req.query.scale)  || 2));
   const height = Math.min(30, Math.max(5, parseInt(req.query.height) || 12));
   try {
     const png = await bwipjs.toBuffer({
-      bcid: 'code128',
-      text: code,
-      scale,
-      height,
-      includetext: false,
-      backgroundcolor: 'ffffff',
+      bcid: 'code128', text: code, scale, height,
+      includetext: false, backgroundcolor: 'ffffff',
     });
     res.set('Content-Type', 'image/png').set('Cache-Control', 'public,max-age=86400').send(png);
   } catch (e) {
@@ -226,9 +226,8 @@ app.get('/api/stats', async (_req, res) => {
 function generateSKU(catId, serialNo) {
   const m = { cat_mob: 'MOB', cat_acc: 'ACC', cat_tv: 'TV', cat_ref: 'REF', cat_wm: 'WM', cat_ac: 'AC', cat_kit: 'KIT', cat_furn: 'FURN', cat_lap: 'LAP', cat_audio: 'AUD', cat_cam: 'CAM', cat_other: 'ELC' };
   const cat = m[catId] || 'GEN';
-  // SKU = CATEGORY-YYYYMMDD-NNNN, reusing the date+seq from the serial
-  const datePart = serialNo.slice(0, 8);   // YYYYMMDD
-  const seqPart  = serialNo.slice(8);      // NNNN
+  const datePart = serialNo.slice(0, 8);
+  const seqPart  = serialNo.slice(8);
   return `${cat}-${datePart}-${seqPart}`;
 }
 
@@ -240,12 +239,18 @@ async function generateSerialNo() {
     String(d.getDate()).padStart(2, '0');
   const count = await db.products.count({});
   const seq = String(count + 1).padStart(4, '0');
-  return `${datePart}${seq}`;  // e.g. 202604110001
+  return `${datePart}${seq}`;
 }
 
+// ── Boot ──────────────────────────────────────────────────────────────────────
 seed().then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n🏪  RetailTag Pro  →  http://localhost:${PORT}`);
-    console.log(`📦  Data           →  ${dataDir}\n`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+      console.log(`\n🏪  RetailTag Pro  →  http://localhost:${PORT}`);
+      console.log(`📦  Data           →  ${dataDir}\n`);
+    });
+  }
 }).catch(console.error);
+
+// Export for Vercel serverless
+module.exports = app;
