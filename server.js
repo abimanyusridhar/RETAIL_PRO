@@ -233,13 +233,20 @@ function generateSKU(catId, serialNo) {
 
 async function generateSerialNo() {
   const d = new Date();
-  const datePart =
-    d.getFullYear().toString() +
-    String(d.getMonth() + 1).padStart(2, '0') +
-    String(d.getDate()).padStart(2, '0');
-  const count = await db.products.count({});
-  const seq = String(count + 1).padStart(4, '0');
-  return `${datePart}${seq}`;
+  const year  = d.getFullYear().toString();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day   = String(d.getDate()).padStart(2, '0');
+  const datePart = `${year}${month}${day}`;
+
+  // Count products created today only — resets to 1 each day
+  const todayStart = `${year}-${month}-${day}T00:00:00.000Z`;
+  const todayEnd   = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).toISOString();
+  const todayCount = await db.products.count({
+    created_at: { $gte: todayStart, $lt: todayEnd }
+  });
+
+  const seq = String(todayCount + 1).padStart(3, '0');
+  return `${datePart}${seq}`;  // e.g. 20260501001
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
