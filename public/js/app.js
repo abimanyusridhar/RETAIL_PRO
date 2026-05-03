@@ -892,7 +892,7 @@ async function printNow() {
       font-size: 7pt; font-weight: 900; letter-spacing: 0.02em;
     }
     .l-barcode {
-      max-height: 11mm;
+      max-height: 8mm;
       display: flex; align-items: center; justify-content: center;
     }
     .l-barcode img {
