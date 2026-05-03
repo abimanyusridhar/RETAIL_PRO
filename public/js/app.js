@@ -777,11 +777,7 @@ async function generatePreview() {
     const detail = [p.color, p.size, p.model_no].filter(Boolean).join(' · ');
     const hasDiscount = p.selling_price && p.selling_price < p.mrp;
 
-    // BRAND:NAME — skip brand prefix if name already starts with brand
-    const brandUp  = (p.brand || '').toUpperCase();
-    const nameUp   = p.name.toUpperCase();
-    const header   = brandUp && !nameUp.startsWith(brandUp)
-      ? `${brandUp}:${nameUp}` : nameUp;
+    const header = p.name.toUpperCase();
 
     // MRP:599.00 — colon style, 2 decimal places
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
@@ -812,10 +808,7 @@ async function generatePreview() {
   const printLabelsHtml = labels.map(p => {
     const detail = [p.color, p.size, p.model_no].filter(Boolean).join(' · ');
     const hasDiscount = p.selling_price && p.selling_price < p.mrp;
-    const brandUp2 = (p.brand || '').toUpperCase();
-    const nameUp2  = p.name.toUpperCase();
-    const header   = brandUp2 && !nameUp2.startsWith(brandUp2)
-      ? `${brandUp2}:${nameUp2}` : nameUp2;
+    const header = p.name.toUpperCase();
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
     const spFmt  = hasDiscount ? `  SP:${Number(p.selling_price).toFixed(2)}` : '';
     const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
@@ -875,7 +868,7 @@ async function printNow() {
       justify-content: space-between;
       text-align: center;
       width: 100%; height: ${printSpec.h}mm; max-height: ${printSpec.h}mm;
-      padding: 0.8mm 3mm 0.8mm;
+      padding: 0.6mm 3mm 3mm;
       page-break-after: always; break-after: page;
       page-break-inside: avoid; break-inside: avoid;
       overflow: hidden; box-sizing: border-box;
@@ -892,7 +885,7 @@ async function printNow() {
       font-size: 7pt; font-weight: 900; letter-spacing: 0.02em;
     }
     .l-barcode {
-      max-height: 8mm;
+      max-height: 7mm;
       display: flex; align-items: center; justify-content: center;
     }
     .l-barcode img {
