@@ -383,6 +383,13 @@ async function start() {
 }
 
 start().catch(err => {
-  console.error('❌  Startup failed:', err.message);
+  console.error('\n❌  Startup failed:', err.message);
+  if (err.message.includes('querySrv') || err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND') || err.message.includes('connect')) {
+    console.error('\n🔧  MongoDB Atlas connection checklist:');
+    console.error('   1. Network Access → Add your IP (or 0.0.0.0/0 for dev):');
+    console.error('      https://cloud.mongodb.com → Security → Network Access');
+    console.error('   2. Check your cluster is not paused (free tier pauses after inactivity)');
+    console.error('   3. Verify MONGODB_URI in your .env file\n');
+  }
   process.exit(1);
 });
