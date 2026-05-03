@@ -47,7 +47,7 @@ function goPage(page) {
   state.activePage = page;
   if (page === 'dashboard') loadDashboard();
   if (page === 'products') loadProducts();
-  if (page === 'print') { renderQueue(); clearQueueSearch(); }
+  if (page === 'print') { renderQueue(); clearQueueSearch(); loadPrinterList(); }
   if (page === 'add-product') resetAddForm();
   closeSidebarIfMobile();
   window.scrollTo(0, 0);
@@ -743,12 +743,12 @@ function autoRefreshPreview() {
 
 // Barcode height (bwip-js height param) and preview width mapped per paper size
 const PAPER_SPECS = {
-  '38mm 25mm': { barcodeH: 18, w: 38, h: 25 },
-  '40mm 20mm': { barcodeH: 15, w: 40, h: 20 },
-  '40mm 25mm': { barcodeH: 18, w: 40, h: 25 },
-  '50mm 25mm': { barcodeH: 20, w: 50, h: 25 },
-  '57mm 32mm': { barcodeH: 26, w: 57, h: 32 },
-  'auto':      { barcodeH: 22, w: 57, h: 32 },
+  '38mm 25mm': { barcodeH: 10, w: 38, h: 25 },
+  '40mm 20mm': { barcodeH:  8, w: 40, h: 20 },
+  '40mm 25mm': { barcodeH: 10, w: 40, h: 25 },
+  '50mm 25mm': { barcodeH: 10, w: 50, h: 25 },
+  '57mm 32mm': { barcodeH: 16, w: 57, h: 32 },
+  'auto':      { barcodeH: 16, w: 57, h: 32 },
 };
 
 async function generatePreview() {
@@ -791,7 +791,7 @@ async function generatePreview() {
     const barcodeUrl = `/api/barcode/${barcodeCode}?scale=3&height=${spec.barcodeH}`;
 
     // Inline preview size mimics the actual label paper dimensions
-    const labelStyle = `width:${previewW}px;min-height:${previewH}px;font-size:${Math.max(7, spec.w * 0.22)}px;`;
+    const labelStyle = `width:${previewW}px;height:${previewH}px;max-height:${previewH}px;overflow:hidden;font-size:${Math.max(7, spec.w * 0.22)}px;`;
 
     return `
       <div class="lbl" style="${labelStyle}">
@@ -850,8 +850,9 @@ async function printNow() {
   const printArea = document.getElementById('printArea');
   if (!printArea?.innerHTML.trim()) { showToast('Queue is empty', 'error'); return; }
 
-  const paperSize = document.getElementById('labelPaperSize')?.value || '50mm 25mm';
-  const deduct    = document.getElementById('deductStock').value === '1';
+  const paperSize  = document.getElementById('labelPaperSize')?.value || '50mm 25mm';
+  const printSpec  = PAPER_SPECS[paperSize] || PAPER_SPECS['50mm 25mm'];
+  const deduct     = document.getElementById('deductStock').value === '1';
 
   // Open a blank popup — blank title means Chrome prints NO header/footer text.
   // This eliminates the URL/page-number labels that appear on the roll.
@@ -870,29 +871,30 @@ async function printNow() {
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       text-align: center;
-      width: 100%; padding: 1mm 1.5mm;
+      width: 100%; height: ${printSpec.h}mm; max-height: ${printSpec.h}mm;
+      padding: 0.8mm 1.5mm;
       page-break-after: always; break-after: page;
       page-break-inside: avoid; break-inside: avoid;
-      overflow: hidden;
+      overflow: hidden; box-sizing: border-box;
     }
     .lbl:last-child { page-break-after: auto; break-after: auto; }
     .l-header {
-      font-size: 6.5pt; font-weight: 900; text-transform: uppercase;
-      line-height: 1.2; word-break: break-word; width: 100%; margin-bottom: 0.3mm;
+      font-size: 6pt; font-weight: 900; text-transform: uppercase;
+      line-height: 1.15; word-break: break-word; width: 100%; margin-bottom: 0.2mm;
     }
-    .l-mrp-line { font-size: 7pt; font-weight: 900; width: 100%; margin-bottom: 0.3mm; }
-    .l-barcode  { width: 100%; margin: 0.4mm 0; }
+    .l-mrp-line { font-size: 6.5pt; font-weight: 900; width: 100%; margin-bottom: 0.2mm; }
+    .l-barcode  { width: 100%; flex-shrink: 1; margin: 0.3mm 0; }
     .l-barcode img {
-      width: 100%; height: auto; display: block;
+      width: 100%; height: auto; max-height: 11mm; display: block;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
     .l-serial {
       font-family: 'Courier New', monospace;
-      font-size: 5pt; font-weight: 700; letter-spacing: 0.06em;
-      width: 100%; margin-top: 0.3mm;
+      font-size: 4.5pt; font-weight: 700; letter-spacing: 0.06em;
+      width: 100%; margin-top: 0.2mm;
     }
-    .l-detail { font-size: 4.5pt; color: #444; width: 100%; margin-bottom: 0.2mm; }
-    .l-inc    { font-size: 4pt;   color: #888; width: 100%; margin-top: 0.2mm;    }
+    .l-detail { font-size: 4pt; color: #444; width: 100%; margin-bottom: 0.15mm; }
+    .l-inc    { font-size: 3.5pt; color: #888; width: 100%; margin-top: 0.15mm;  }
     .l-sku    { display: none; }
   `;
 
@@ -925,6 +927,57 @@ async function printNow() {
       if (state.activePage === 'products') loadProducts();
     }
   }).catch(() => {});
+}
+
+// ─── Direct Print (Server-Side PDF → Thermal Printer) ────────────────────────
+async function loadPrinterList() {
+  const sel = document.getElementById('directPrinter');
+  if (!sel) return;
+  try {
+    const printers = await apiFetch('/api/printers');
+    if (!printers.length) {
+      sel.innerHTML = '<option value="">No printers found</option>';
+      return;
+    }
+    sel.innerHTML = printers.map(p =>
+      `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`
+    ).join('');
+    const thermal = printers.find(p => /tt065|thermal|label|barcode|tspl|zebra|xp-|lp\d/i.test(p.name));
+    if (thermal) sel.value = thermal.name;
+  } catch (_) {
+    sel.innerHTML = '<option value="">Could not load printers</option>';
+  }
+}
+
+async function printDirect() {
+  if (!state.queue.length) { showToast('Queue is empty', 'error'); return; }
+
+  const printerName = document.getElementById('directPrinter')?.value;
+  const paperSize   = document.getElementById('labelPaperSize')?.value || '50mm 25mm';
+  const deduct      = document.getElementById('deductStock').value === '1';
+
+  if (!printerName) { showToast('Select a printer first', 'error'); return; }
+
+  const btn = document.getElementById('btnDirect');
+  if (btn) btn.disabled = true;
+
+  try {
+    const result = await apiFetch('/api/print-direct', 'POST', {
+      items: state.queue.map(q => ({ productId: q.product.id, qty: q.qty })),
+      printerName,
+      labelSize: paperSize,
+      deductStock: deduct,
+    });
+    showToast(`${result.labels} label${result.labels !== 1 ? 's' : ''} sent to printer`, 'success');
+    if (deduct) {
+      if (state.activePage === 'products') loadProducts();
+      if (state.activePage === 'dashboard') loadDashboard();
+    }
+  } catch (e) {
+    showToast('Print failed — ' + (e.message || 'check printer connection'), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function showDeductBanner() {

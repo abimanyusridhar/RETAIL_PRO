@@ -358,9 +358,9 @@
             <div class="queue-actions">
               <div class="form-section-title" style="margin-top:8px">Print Settings</div>
 
-              <!-- Paper size drives barcode height + preview scale -->
+              <!-- Paper size -->
               <div class="form-row">
-                <label>Label Paper Size (TVS LP 40 Lite)</label>
+                <label>Label Size</label>
                 <select id="labelPaperSize" onchange="autoRefreshPreview()">
                   <option value="50mm 25mm" selected>50 × 25 mm (default)</option>
                   <option value="38mm 25mm">38 × 25 mm</option>
@@ -369,6 +369,12 @@
                   <option value="40mm 20mm">40 × 20 mm (small)</option>
                   <option value="auto">Auto (printer dialog)</option>
                 </select>
+              </div>
+
+              <!-- Direct printer selection (populated from server) -->
+              <div class="form-row" id="directPrinterRow">
+                <label>Printer</label>
+                <select id="directPrinter"><option value="">Loading printers…</option></select>
               </div>
 
               <div class="form-row-2">
@@ -407,21 +413,20 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
                 Generate Preview
               </button>
-              <button class="btn-print" onclick="printNow()">
+
+              <!-- Primary: Direct Print (BarTender-style, no browser dialog) -->
+              <button class="btn-print" id="btnDirect" onclick="printDirect()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Print Now
+                Print Direct
               </button>
 
-              <div class="print-tips">
-                <strong>Chrome print dialog checklist</strong>
-                <ul>
-                  <li>Margins → <b>None</b></li>
-                  <li>Headers &amp; footers → <b>Off</b></li>
-                  <li>Paper size → <b>50 × 25 mm</b> (match your roll)</li>
-                  <li>Scale → <b>100%</b></li>
-                </ul>
-              </div>
-              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:4px" onclick="clearQueue()">
+              <!-- Fallback: browser dialog -->
+              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:6px;font-size:12px;gap:6px" onclick="printNow()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print via Browser (fallback)
+              </button>
+
+              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:6px" onclick="clearQueue()">
                 Clear Queue
               </button>
             </div>

@@ -12,11 +12,13 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "bwip-js": "^4.4.0",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "nedb-promises": "^6.2.1",
-    "bwip-js": "^4.4.0",
-    "uuid": "^9.0.0",
-    "cors": "^2.8.5"
+    "pdf-to-printer": "^5.8.0",
+    "pdfkit": "^0.18.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
