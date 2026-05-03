@@ -871,10 +871,11 @@ async function printNow() {
       font-family: Arial, Helvetica, sans-serif;
       color: #000; background: #fff;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
+      align-items: stretch;
+      justify-content: flex-start;
       text-align: center;
       width: 100%; height: ${printSpec.h}mm; max-height: ${printSpec.h}mm;
-      padding: 0.8mm 1.8mm 0.6mm;
+      padding: 0.8mm 3mm 0.6mm;
       page-break-after: always; break-after: page;
       page-break-inside: avoid; break-inside: avoid;
       overflow: hidden; box-sizing: border-box;
@@ -882,32 +883,33 @@ async function printNow() {
     .lbl:last-child { page-break-after: auto; break-after: auto; }
     .l-header {
       font-size: 5.5pt; font-weight: 900; text-transform: uppercase;
-      line-height: 1.25; word-break: break-word; overflow-wrap: break-word;
-      width: 100%; margin-bottom: 0.5mm;
+      line-height: 1.2; word-break: break-word; overflow-wrap: break-word;
+      margin-bottom: 0.4mm;
     }
     .l-detail {
-      font-size: 4.5pt; color: #000; font-weight: 600;
-      width: 100%; margin-bottom: 0.4mm; line-height: 1.2;
+      font-size: 4pt; color: #222; font-weight: 600;
+      margin-bottom: 0.3mm; line-height: 1.2;
     }
     .l-mrp-line {
-      font-size: 7pt; font-weight: 900; width: 100%;
+      font-size: 7pt; font-weight: 900;
       margin-bottom: 0.4mm; letter-spacing: 0.02em;
     }
     .l-barcode {
-      flex: 1; width: 100%;
+      flex: 1;
       display: flex; align-items: center; justify-content: center;
       margin: 0.3mm 0;
     }
     .l-barcode img {
-      width: 100%; max-height: 100%; height: auto; display: block;
+      display: block; width: 96%; margin: 0 auto;
+      height: auto; max-height: 100%;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
     .l-serial {
       font-family: 'Courier New', monospace;
-      font-size: 5pt; font-weight: 700; letter-spacing: 0.1em;
-      width: 100%; margin-top: 0.3mm; color: #000;
+      font-size: 4.8pt; font-weight: 700; letter-spacing: 0.12em;
+      margin-top: 0.3mm; color: #000;
     }
-    .l-inc  { font-size: 3.5pt; color: #666; width: 100%; margin-top: 0.15mm; }
+    .l-inc  { font-size: 3.5pt; color: #555; margin-top: 0.15mm; }
     .l-sku  { display: none; }
   `;
 
