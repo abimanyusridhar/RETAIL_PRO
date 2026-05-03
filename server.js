@@ -7,12 +7,23 @@ const Datastore    = require('nedb-promises');
 const { v4: uuidv4 } = require('uuid');
 const bwipjs       = require('bwip-js');
 const PDFDocument  = require('pdfkit');
-const { print: printPDF, getPrinters } = require('pdf-to-printer');
+
+// pdf-to-printer bundles a Windows-only binary — load only on Windows (local server).
+// On Vercel/Linux the direct-print endpoints return a graceful "unavailable" response.
+let printPDF, getPrinters;
+if (process.platform === 'win32') {
+  try {
+    ({ print: printPDF, getPrinters } = require('pdf-to-printer'));
+  } catch (_) {}
+}
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-const dataDir = path.join(__dirname, 'data');
+// Vercel's filesystem is read-only except /tmp; use /tmp/data when deployed.
+const dataDir = process.env.VERCEL
+  ? '/tmp/data'
+  : path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const db = {
@@ -194,6 +205,7 @@ app.get('/api/print-jobs', async (_req, res) => {
 
 // ── Printers ─────────────────────────────────────────────────────────────────
 app.get('/api/printers', async (_req, res) => {
+  if (!getPrinters) return res.json([]);
   try {
     const printers = await getPrinters();
     res.json(printers);
@@ -204,6 +216,7 @@ app.get('/api/printers', async (_req, res) => {
 
 // ── Direct Print (server-side PDF → thermal printer) ─────────────────────────
 app.post('/api/print-direct', async (req, res) => {
+  if (!printPDF) return res.status(503).json({ error: 'Direct printing is only available when running locally on Windows. Use "Print via Browser" instead.' });
   const { items, printerName, deductStock: shouldDeduct, labelSize = '50mm 25mm' } = req.body;
   if (!items?.length) return res.status(400).json({ error: 'items required' });
   if (!printerName)   return res.status(400).json({ error: 'printerName required' });
