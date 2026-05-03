@@ -872,10 +872,10 @@ async function printNow() {
       color: #000; background: #fff;
       display: flex; flex-direction: column;
       align-items: stretch;
-      justify-content: flex-start;
+      justify-content: space-between;
       text-align: center;
       width: 100%; height: ${printSpec.h}mm; max-height: ${printSpec.h}mm;
-      padding: 0.8mm 3mm 0.6mm;
+      padding: 0.8mm 3mm 0.8mm;
       page-break-after: always; break-after: page;
       page-break-inside: avoid; break-inside: avoid;
       overflow: hidden; box-sizing: border-box;
@@ -884,20 +884,16 @@ async function printNow() {
     .l-header {
       font-size: 5.5pt; font-weight: 900; text-transform: uppercase;
       line-height: 1.2; word-break: break-word; overflow-wrap: break-word;
-      margin-bottom: 0.4mm;
     }
     .l-detail {
-      font-size: 4pt; color: #222; font-weight: 600;
-      margin-bottom: 0.3mm; line-height: 1.2;
+      font-size: 4pt; color: #222; font-weight: 600; line-height: 1.2;
     }
     .l-mrp-line {
-      font-size: 7pt; font-weight: 900;
-      margin-bottom: 0.4mm; letter-spacing: 0.02em;
+      font-size: 7pt; font-weight: 900; letter-spacing: 0.02em;
     }
     .l-barcode {
-      flex: 1;
+      max-height: 11mm;
       display: flex; align-items: center; justify-content: center;
-      margin: 0.3mm 0;
     }
     .l-barcode img {
       display: block; width: 96%; margin: 0 auto;
@@ -906,10 +902,9 @@ async function printNow() {
     }
     .l-serial {
       font-family: 'Courier New', monospace;
-      font-size: 4.8pt; font-weight: 700; letter-spacing: 0.12em;
-      margin-top: 0.3mm; color: #000;
+      font-size: 5pt; font-weight: 700; letter-spacing: 0.12em; color: #000;
     }
-    .l-inc  { font-size: 3.5pt; color: #555; margin-top: 0.15mm; }
+    .l-inc  { font-size: 3.5pt; color: #555; }
     .l-sku  { display: none; }
   `;
 
