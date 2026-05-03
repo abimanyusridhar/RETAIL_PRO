@@ -336,9 +336,8 @@ async function saveStockModal() {
 // ─── Add / Edit Product ───────────────────────────────────────────────────────
 function resetAddForm() {
   document.getElementById('formTitle').textContent = 'Add Product';
-  document.getElementById('formSubtitle').textContent = 'Fill in the details — Serial No. & SKU are auto-generated on save';
+  document.getElementById('formSubtitle').textContent = 'Enter Serial No. & SKU manually — barcode is generated from Serial No.';
   document.getElementById('editId').value = '';
-  document.getElementById('identifiersCard').style.display = 'none';
   document.getElementById('btnAddAnother').style.display = '';
   clearForm();
 }
@@ -364,7 +363,11 @@ async function saveProduct() {
       goPage('print');
     }
   } catch (e) {
-    showToast('Failed to save product', 'error');
+    if (e.status === 409) {
+      showToast(e.message || 'Serial No. or SKU already exists', 'error');
+    } else {
+      showToast('Failed to save product', 'error');
+    }
   }
 }
 
@@ -373,33 +376,33 @@ async function saveAndAddAnother() {
   if (!body) return;
   try {
     const saved = await apiFetch('/api/products', 'POST', body);
-    // Also add to print queue
     state.queue.push({ product: saved, qty: 1 });
     state.previewDirty = true;
     updateQueueBadge();
     showToast(`✓ Saved & queued: ${saved.name}`, 'success');
     clearForm();
-    document.getElementById('f-name').focus();
+    document.getElementById('f-serial').focus();
   } catch (e) {
-    showToast('Failed to save product', 'error');
+    if (e.status === 409) {
+      showToast(e.message || 'Serial No. or SKU already exists', 'error');
+    } else {
+      showToast('Failed to save product', 'error');
+    }
   }
 }
 
 function collectForm() {
   let valid = true;
-  const name = document.getElementById('f-name').value.trim();
-  const brand = document.getElementById('f-brand').value.trim();
-  const mrpRaw = document.getElementById('f-mrp').value;
-  const mrp = parseFloat(mrpRaw);
+  const serial_no = document.getElementById('f-serial').value.trim();
+  const sku       = document.getElementById('f-sku').value.trim();
+  const name      = document.getElementById('f-name').value.trim();
+  const brand     = document.getElementById('f-brand').value.trim();
+  const mrpRaw    = document.getElementById('f-mrp').value;
+  const mrp       = parseFloat(mrpRaw);
 
-  if (!name) {
-    setFieldError('row-name', 'err-name', 'Product name is required');
-    valid = false;
-  }
-  if (!brand) {
-    setFieldError('row-brand', 'err-brand', 'Brand is required');
-    valid = false;
-  }
+  if (!serial_no) { setFieldError('row-serial', 'err-serial', 'Serial No. is required'); valid = false; }
+  if (!sku)       { setFieldError('row-sku',    'err-sku',    'SKU is required');         valid = false; }
+  if (!name)      { setFieldError('row-name',   'err-name',   'Product name is required'); valid = false; }
   if (!mrpRaw || isNaN(mrp) || mrp <= 0) {
     setFieldError('row-mrp', 'err-mrp', 'Enter a valid MRP greater than 0');
     valid = false;
@@ -410,7 +413,7 @@ function collectForm() {
   const sellingPrice = (!isNaN(spRaw) && spRaw > 0) ? spRaw : mrp;
 
   return {
-    name, brand,
+    serial_no, sku, name, brand,
     category_id: document.getElementById('f-cat').value,
     mrp, selling_price: sellingPrice,
     model_no: document.getElementById('f-model').value.trim(),
@@ -473,9 +476,7 @@ async function editProduct(id) {
   document.getElementById('f-gst').value = p.gst_rate || 18;
   document.getElementById('f-hsn').value = p.hsn_code || '';
   document.getElementById('f-desc').value = p.description || '';
-  // Show identifiers
-  document.getElementById('identifiersCard').style.display = '';
-  document.getElementById('f-serial').value = p.serial_no || '—';
+  document.getElementById('f-serial').value = p.serial_no || '';
   document.getElementById('f-sku').value = p.sku || '';
   // Hide "Add Another" on edit
   document.getElementById('btnAddAnother').style.display = 'none';
@@ -484,13 +485,13 @@ async function editProduct(id) {
 }
 
 function clearForm() {
-  ['f-name', 'f-brand', 'f-model', 'f-color', 'f-size', 'f-desc', 'f-hsn', 'f-mrp', 'f-price', 'f-stock'].forEach(id => {
+  ['f-serial', 'f-sku', 'f-name', 'f-brand', 'f-model', 'f-color', 'f-size', 'f-desc', 'f-hsn', 'f-mrp', 'f-price', 'f-stock'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('f-gst').value = '18';
   document.getElementById('editId').value = '';
-  ['row-name', 'row-brand', 'row-mrp'].forEach(id => clearFieldError(id));
+  ['row-serial', 'row-sku', 'row-name', 'row-brand', 'row-mrp'].forEach(id => clearFieldError(id));
   const hint = document.getElementById('priceHint');
   if (hint) { hint.textContent = 'Leave blank to use MRP'; hint.style.color = ''; }
 }
@@ -957,12 +958,29 @@ function loadSampleSearch() {
   loadProducts();
 }
 
+async function scanLookup(term) {
+  term = (term || '').trim();
+  if (!term) return;
+  document.getElementById('prodSearch').value = term;
+  const scanInput = document.getElementById('scanSearch');
+  if (scanInput) scanInput.value = '';
+  state.currentPage = 1;
+  goPage('products');
+  loadProducts();
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 async function apiFetch(url, method = 'GET', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(API + url, opts);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const j = await res.json(); if (j.error) msg = j.error; } catch (_) {}
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
   return res.json();
 }
 

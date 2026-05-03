@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RetailTag Pro — Inventory & Label Manager</title>
+<title>PMTAG — Inventory & Label Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css" />
@@ -14,9 +14,9 @@
   <!-- ═══ SIDEBAR ══════════════════════════════════════════════════════════ -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-mark">RT</div>
+      <div class="logo-mark">PM</div>
       <div>
-        <span class="logo-text">Retail<strong>Tag</strong></span>
+        <span class="logo-text"><strong>PM</strong>TAG</span>
         <span class="logo-sub">Inventory &amp; Labels</span>
       </div>
     </div>
@@ -133,6 +133,15 @@
         </div>
       </div>
 
+      <!-- Scan / Search bar -->
+      <div class="scan-bar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/><line x1="12" y1="7" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="17"/><line x1="3" y1="12" x2="7" y2="12"/><line x1="21" y1="12" x2="17" y2="12"/></svg>
+        <input type="text" id="scanSearch" placeholder="Scan barcode or type Serial No. / SKU — press Enter"
+          onkeydown="if(event.key==='Enter') scanLookup(this.value)"
+          autocomplete="off" style="flex:1;font-family:var(--mono)" />
+        <button class="btn-outline" style="padding:6px 14px;font-size:12px" onclick="scanLookup(document.getElementById('scanSearch').value)">Find</button>
+      </div>
+
       <div class="filter-bar">
         <select id="catFilter" onchange="filterChanged()">
           <option value="">All Categories</option>
@@ -164,7 +173,7 @@
       <div class="page-header">
         <div class="page-header-left">
           <h1 id="formTitle">Add Product</h1>
-          <p id="formSubtitle">Fill in the details — Serial No., SKU &amp; Barcode are auto-generated on save</p>
+          <p id="formSubtitle">Enter Serial No. &amp; SKU manually — barcode is generated from Serial No.</p>
         </div>
         <div class="page-header-actions">
           <button class="btn-outline" onclick="goPage('products')">← Back</button>
@@ -177,6 +186,25 @@
 
         <!-- LEFT: Basic Info -->
         <div>
+          <!-- Serial No. + SKU — always visible, manually entered -->
+          <div class="form-card" style="margin-bottom:14px">
+            <div class="form-section-title">Product Identifiers <span class="req">*</span></div>
+            <div class="form-row-2">
+              <div class="form-row" id="row-serial">
+                <label>Serial No. <span class="req">*</span></label>
+                <input type="text" id="f-serial" placeholder="e.g. SN20250503001"
+                  oninput="clearFieldError('row-serial')" style="font-family:var(--mono);letter-spacing:0.04em" />
+                <span class="field-error" id="err-serial"></span>
+              </div>
+              <div class="form-row" id="row-sku">
+                <label>SKU Code <span class="req">*</span></label>
+                <input type="text" id="f-sku" placeholder="e.g. TV-20250503-001"
+                  oninput="clearFieldError('row-sku')" style="font-family:var(--mono);letter-spacing:0.04em" />
+                <span class="field-error" id="err-sku"></span>
+              </div>
+            </div>
+          </div>
+
           <div class="form-card" style="margin-bottom:14px">
             <div class="form-section-title">Basic Information</div>
 
@@ -222,20 +250,6 @@
             </div>
           </div>
 
-          <!-- Auto-generated IDs (shown when editing) -->
-          <div class="form-card" id="identifiersCard" style="display:none">
-            <div class="form-section-title">Product Identifiers</div>
-            <div class="form-row-2">
-              <div class="form-row">
-                <label>Serial No.</label>
-                <input type="text" id="f-serial" readonly />
-              </div>
-              <div class="form-row">
-                <label>SKU Code</label>
-                <input type="text" id="f-sku" readonly />
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- RIGHT: Pricing + Inventory -->
@@ -286,14 +300,7 @@
           </div>
 
           <div class="form-card" style="background:var(--accent-bg);border-color:var(--accent-border)">
-            <div class="auto-gen-strip" style="margin-bottom:0;background:transparent;border:none;padding:0">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              <div>
-                <strong style="display:block;margin-bottom:2px">Auto-generated on save</strong>
-                Each product gets a unique <strong>Serial No.</strong> (YYYYMMDDNNNN) and a <strong>SKU</strong> (CAT-YYYYMMDD-NNNN) used for the barcode label.
-              </div>
-            </div>
-            <div class="btn-row" style="margin-top:16px">
+            <div class="btn-row">
               <button class="btn-primary" onclick="saveProduct()">Save Product</button>
               <button class="btn-success" id="btnAddAnother" onclick="saveAndAddAnother()">Save &amp; Add Another</button>
               <button class="btn-outline" onclick="clearForm()">Clear</button>
