@@ -47,7 +47,7 @@ function goPage(page) {
   state.activePage = page;
   if (page === 'dashboard') loadDashboard();
   if (page === 'products') loadProducts();
-  if (page === 'print') { renderQueue(); clearQueueSearch(); loadPrinterList(); }
+  if (page === 'print') { renderQueue(); clearQueueSearch(); }
   if (page === 'add-product') resetAddForm();
   closeSidebarIfMobile();
   window.scrollTo(0, 0);
@@ -777,10 +777,11 @@ async function generatePreview() {
     const detail = [p.color, p.size, p.model_no].filter(Boolean).join(' · ');
     const hasDiscount = p.selling_price && p.selling_price < p.mrp;
 
-    // BRAND:PRODUCT NAME — Samsung format: colon, no space, all caps
-    const header = p.brand
-      ? `${p.brand.toUpperCase()}:${p.name.toUpperCase()}`
-      : p.name.toUpperCase();
+    // BRAND:NAME — skip brand prefix if name already starts with brand
+    const brandUp  = (p.brand || '').toUpperCase();
+    const nameUp   = p.name.toUpperCase();
+    const header   = brandUp && !nameUp.startsWith(brandUp)
+      ? `${brandUp}:${nameUp}` : nameUp;
 
     // MRP:599.00 — colon style, 2 decimal places
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
@@ -811,9 +812,10 @@ async function generatePreview() {
   const printLabelsHtml = labels.map(p => {
     const detail = [p.color, p.size, p.model_no].filter(Boolean).join(' · ');
     const hasDiscount = p.selling_price && p.selling_price < p.mrp;
-    const header = p.brand
-      ? `${p.brand.toUpperCase()}:${p.name.toUpperCase()}`
-      : p.name.toUpperCase();
+    const brandUp2 = (p.brand || '').toUpperCase();
+    const nameUp2  = p.name.toUpperCase();
+    const header   = brandUp2 && !nameUp2.startsWith(brandUp2)
+      ? `${brandUp2}:${nameUp2}` : nameUp2;
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
     const spFmt  = hasDiscount ? `  SP:${Number(p.selling_price).toFixed(2)}` : '';
     const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
@@ -872,7 +874,7 @@ async function printNow() {
       align-items: center; justify-content: center;
       text-align: center;
       width: 100%; height: ${printSpec.h}mm; max-height: ${printSpec.h}mm;
-      padding: 0.8mm 1.5mm;
+      padding: 1mm 2mm;
       page-break-after: always; break-after: page;
       page-break-inside: avoid; break-inside: avoid;
       overflow: hidden; box-sizing: border-box;
@@ -880,21 +882,24 @@ async function printNow() {
     .lbl:last-child { page-break-after: auto; break-after: auto; }
     .l-header {
       font-size: 6pt; font-weight: 900; text-transform: uppercase;
-      line-height: 1.15; word-break: break-word; width: 100%; margin-bottom: 0.2mm;
+      line-height: 1.2; word-break: break-all; width: 100%; margin-bottom: 0.3mm;
     }
-    .l-mrp-line { font-size: 6.5pt; font-weight: 900; width: 100%; margin-bottom: 0.2mm; }
-    .l-barcode  { width: 100%; flex-shrink: 1; margin: 0.3mm 0; }
+    .l-mrp-line {
+      font-size: 7pt; font-weight: 900; width: 100%; margin-bottom: 0.3mm;
+      letter-spacing: 0.02em;
+    }
+    .l-barcode  { width: 100%; flex-shrink: 1; margin: 0.4mm 0; }
     .l-barcode img {
       width: 100%; height: auto; max-height: 11mm; display: block;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
     .l-serial {
       font-family: 'Courier New', monospace;
-      font-size: 4.5pt; font-weight: 700; letter-spacing: 0.06em;
-      width: 100%; margin-top: 0.2mm;
+      font-size: 5pt; font-weight: 700; letter-spacing: 0.08em;
+      width: 100%; margin-top: 0.3mm; color: #000;
     }
-    .l-detail { font-size: 4pt; color: #444; width: 100%; margin-bottom: 0.15mm; }
-    .l-inc    { font-size: 3.5pt; color: #888; width: 100%; margin-top: 0.15mm;  }
+    .l-detail { font-size: 4.5pt; color: #000; width: 100%; margin-bottom: 0.2mm; }
+    .l-inc    { font-size: 3.5pt; color: #666; width: 100%; margin-top: 0.15mm;  }
     .l-sku    { display: none; }
   `;
 
@@ -927,57 +932,6 @@ async function printNow() {
       if (state.activePage === 'products') loadProducts();
     }
   }).catch(() => {});
-}
-
-// ─── Direct Print (Server-Side PDF → Thermal Printer) ────────────────────────
-async function loadPrinterList() {
-  const sel = document.getElementById('directPrinter');
-  if (!sel) return;
-  try {
-    const printers = await apiFetch('/api/printers');
-    if (!printers.length) {
-      sel.innerHTML = '<option value="">No printers found</option>';
-      return;
-    }
-    sel.innerHTML = printers.map(p =>
-      `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`
-    ).join('');
-    const thermal = printers.find(p => /tt065|thermal|label|barcode|tspl|zebra|xp-|lp\d/i.test(p.name));
-    if (thermal) sel.value = thermal.name;
-  } catch (_) {
-    sel.innerHTML = '<option value="">Could not load printers</option>';
-  }
-}
-
-async function printDirect() {
-  if (!state.queue.length) { showToast('Queue is empty', 'error'); return; }
-
-  const printerName = document.getElementById('directPrinter')?.value;
-  const paperSize   = document.getElementById('labelPaperSize')?.value || '50mm 25mm';
-  const deduct      = document.getElementById('deductStock').value === '1';
-
-  if (!printerName) { showToast('Select a printer first', 'error'); return; }
-
-  const btn = document.getElementById('btnDirect');
-  if (btn) btn.disabled = true;
-
-  try {
-    const result = await apiFetch('/api/print-direct', 'POST', {
-      items: state.queue.map(q => ({ productId: q.product.id, qty: q.qty })),
-      printerName,
-      labelSize: paperSize,
-      deductStock: deduct,
-    });
-    showToast(`${result.labels} label${result.labels !== 1 ? 's' : ''} sent to printer`, 'success');
-    if (deduct) {
-      if (state.activePage === 'products') loadProducts();
-      if (state.activePage === 'dashboard') loadDashboard();
-    }
-  } catch (e) {
-    showToast('Print failed — ' + (e.message || 'check printer connection'), 'error');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
 }
 
 function showDeductBanner() {

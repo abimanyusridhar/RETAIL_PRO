@@ -371,12 +371,6 @@
                 </select>
               </div>
 
-              <!-- Direct printer selection (populated from server) -->
-              <div class="form-row" id="directPrinterRow">
-                <label>Printer</label>
-                <select id="directPrinter"><option value="">Loading printers…</option></select>
-              </div>
-
               <div class="form-row-2">
                 <div class="form-row">
                   <label>Show MRP</label>
@@ -414,16 +408,9 @@
                 Generate Preview
               </button>
 
-              <!-- Primary: Direct Print (BarTender-style, no browser dialog) -->
-              <button class="btn-print" id="btnDirect" onclick="printDirect()">
+              <button class="btn-print" onclick="printNow()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Print Direct
-              </button>
-
-              <!-- Fallback: browser dialog -->
-              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:6px;font-size:12px;gap:6px" onclick="printNow()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Print via Browser (fallback)
+                Print Labels
               </button>
 
               <button class="btn-outline" style="width:100%;justify-content:center;margin-top:6px" onclick="clearQueue()">
