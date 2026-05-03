@@ -871,36 +871,44 @@ async function printNow() {
       font-family: Arial, Helvetica, sans-serif;
       color: #000; background: #fff;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      align-items: center; justify-content: flex-start;
       text-align: center;
       width: 100%; height: ${printSpec.h}mm; max-height: ${printSpec.h}mm;
-      padding: 1mm 2mm;
+      padding: 0.8mm 1.8mm 0.6mm;
       page-break-after: always; break-after: page;
       page-break-inside: avoid; break-inside: avoid;
       overflow: hidden; box-sizing: border-box;
     }
     .lbl:last-child { page-break-after: auto; break-after: auto; }
     .l-header {
-      font-size: 6pt; font-weight: 900; text-transform: uppercase;
-      line-height: 1.2; word-break: break-all; width: 100%; margin-bottom: 0.3mm;
+      font-size: 5.5pt; font-weight: 900; text-transform: uppercase;
+      line-height: 1.25; word-break: break-word; overflow-wrap: break-word;
+      width: 100%; margin-bottom: 0.5mm;
+    }
+    .l-detail {
+      font-size: 4.5pt; color: #000; font-weight: 600;
+      width: 100%; margin-bottom: 0.4mm; line-height: 1.2;
     }
     .l-mrp-line {
-      font-size: 7pt; font-weight: 900; width: 100%; margin-bottom: 0.3mm;
-      letter-spacing: 0.02em;
+      font-size: 7pt; font-weight: 900; width: 100%;
+      margin-bottom: 0.4mm; letter-spacing: 0.02em;
     }
-    .l-barcode  { width: 100%; flex-shrink: 1; margin: 0.4mm 0; }
+    .l-barcode {
+      flex: 1; width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0.3mm 0;
+    }
     .l-barcode img {
-      width: 100%; height: auto; max-height: 11mm; display: block;
+      width: 100%; max-height: 100%; height: auto; display: block;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
     .l-serial {
       font-family: 'Courier New', monospace;
-      font-size: 5pt; font-weight: 700; letter-spacing: 0.08em;
+      font-size: 5pt; font-weight: 700; letter-spacing: 0.1em;
       width: 100%; margin-top: 0.3mm; color: #000;
     }
-    .l-detail { font-size: 4.5pt; color: #000; width: 100%; margin-bottom: 0.2mm; }
-    .l-inc    { font-size: 3.5pt; color: #666; width: 100%; margin-top: 0.15mm;  }
-    .l-sku    { display: none; }
+    .l-inc  { font-size: 3.5pt; color: #666; width: 100%; margin-top: 0.15mm; }
+    .l-sku  { display: none; }
   `;
 
   pw.document.write(
