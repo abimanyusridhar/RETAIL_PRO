@@ -119,7 +119,7 @@ app.get('/api/products', async (req, res) => {
   if (low_stock === '1') query.stock = { $lte: 5 };
   if (search) {
     const rx = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    query.$or = [{ name: rx }, { brand: rx }, { sku: rx }, { serial_no: rx }, { model_no: rx }];
+    query.$or = [{ name: rx }, { brand: rx }, { serial_no: rx }, { model_no: rx }];
   }
   const total    = await Product.countDocuments(query);
   const skip     = (parseInt(page) - 1) * parseInt(limit);
@@ -143,23 +143,18 @@ app.get('/api/products/:id', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
   const {
-    name, brand, serial_no, sku, category_id,
+    name, brand, serial_no, category_id,
     mrp, selling_price, model_no, color, size,
     stock, gst_rate, hsn_code, description,
   } = req.body;
-  if (!name || !mrp)    return res.status(400).json({ error: 'name and mrp required' });
-  if (!serial_no)       return res.status(400).json({ error: 'Serial No. is required' });
-  if (!sku)             return res.status(400).json({ error: 'SKU is required' });
+  if (!name || !mrp) return res.status(400).json({ error: 'name and mrp required' });
+  if (!serial_no)    return res.status(400).json({ error: 'Serial No. is required' });
 
-  const dup = await Product.findOne({ $or: [{ serial_no }, { sku }] }).lean();
-  if (dup) return res.status(409).json({
-    error: dup.serial_no === serial_no
-      ? `Serial No. "${serial_no}" already exists`
-      : `SKU "${sku}" already exists`,
-  });
+  const dup = await Product.findOne({ serial_no }).lean();
+  if (dup) return res.status(409).json({ error: `Serial No. "${serial_no}" already exists` });
 
   const doc = await new Product({
-    _id: uuidv4(), serial_no, sku,
+    _id: uuidv4(), serial_no,
     name, brand: brand || '',
     category_id: category_id || 'cat_other',
     mrp: parseFloat(mrp), selling_price: parseFloat(selling_price || mrp),
@@ -173,13 +168,13 @@ app.post('/api/products', async (req, res) => {
 
 app.put('/api/products/:id', async (req, res) => {
   const {
-    name, brand, serial_no, sku, category_id,
+    name, brand, serial_no, category_id,
     mrp, selling_price, model_no, color, size,
     stock, gst_rate, hsn_code, description,
   } = req.body;
   await Product.updateOne({ _id: req.params.id }, {
     $set: {
-      name, brand, serial_no, sku, category_id,
+      name, brand, serial_no, category_id,
       mrp: parseFloat(mrp), selling_price: parseFloat(selling_price || mrp),
       model_no: model_no || '', color: color || '', size: size || '',
       stock: parseInt(stock || 0), gst_rate: parseFloat(gst_rate || 18),

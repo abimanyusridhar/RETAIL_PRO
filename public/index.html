@@ -173,7 +173,7 @@
           <path d="M14 14h3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3"/>
         </svg>
         <input type="text" id="scanSearch"
-          placeholder="Scan barcode or type Serial No. / SKU — press Enter"
+          placeholder="Scan barcode or type Serial No. — press Enter"
           onkeydown="if(event.key==='Enter') scanLookup(this.value)"
           autocomplete="off" />
         <button class="btn-outline" style="padding:6px 14px;font-size:12.5px;flex-shrink:0"
@@ -187,7 +187,7 @@
         <select id="catFilter" onchange="filterChanged()">
           <option value="">All Categories</option>
         </select>
-        <input type="text" id="prodSearch" placeholder="Search name, brand, SKU, serial…" oninput="filterChanged()" style="max-width:320px" />
+        <input type="text" id="prodSearch" placeholder="Search name, brand, serial number…" oninput="filterChanged()" style="max-width:320px" />
         <span class="filter-count" id="filterCount"></span>
       </div>
 
@@ -197,7 +197,7 @@
             <tr>
               <th>Product</th>
               <th>Category</th>
-              <th>Reference</th>
+              <th>Serial No.</th>
               <th>Price</th>
               <th>Stock</th>
               <th>Actions</th>
@@ -230,22 +230,15 @@
 
         <!-- LEFT: Basic Info -->
         <div>
-          <!-- Serial No. + SKU — always visible, manually entered -->
+          <!-- Serial No. — manually entered, used as barcode -->
           <div class="form-card" style="margin-bottom:14px">
-            <div class="form-section-title">Product Identifiers <span class="req">*</span></div>
-            <div class="form-row-2">
-              <div class="form-row" id="row-serial">
-                <label>Serial No. <span class="req">*</span></label>
-                <input type="text" id="f-serial" placeholder="e.g. SN20250503001"
-                  oninput="clearFieldError('row-serial')" style="font-family:var(--mono);letter-spacing:0.04em" />
-                <span class="field-error" id="err-serial"></span>
-              </div>
-              <div class="form-row" id="row-sku">
-                <label>SKU Code <span class="req">*</span></label>
-                <input type="text" id="f-sku" placeholder="e.g. TV-20250503-001"
-                  oninput="clearFieldError('row-sku')" style="font-family:var(--mono);letter-spacing:0.04em" />
-                <span class="field-error" id="err-sku"></span>
-              </div>
+            <div class="form-section-title">Product Identifier <span class="req">*</span></div>
+            <div class="form-row" id="row-serial">
+              <label>Serial No. <span class="req">*</span></label>
+              <input type="text" id="f-serial" placeholder="e.g. 20260511001"
+                oninput="clearFieldError('row-serial')" style="font-family:var(--mono);letter-spacing:0.06em;font-size:15px" />
+              <span class="field-hint">Printed on the barcode label — must be unique</span>
+              <span class="field-error" id="err-serial"></span>
             </div>
           </div>
 

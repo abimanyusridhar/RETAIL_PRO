@@ -164,7 +164,7 @@ async function loadDashboard() {
         <div class="ls-item">
           <div class="ls-info">
             <div class="ls-name">${escHtml(p.name)}</div>
-            <div class="ls-meta">${p.category_icon || ''} ${escHtml(p.category_name || '')} · ${escHtml(p.sku)}</div>
+            <div class="ls-meta">${p.category_icon || ''} ${escHtml(p.category_name || '')} · ${escHtml(p.serial_no || '—')}</div>
           </div>
           <div class="ls-right">
             <span class="ls-stock ${cls}">${label}</span>
@@ -259,8 +259,7 @@ function renderProductTable() {
         </td>
         <td><span class="cat-pill">${p.category_icon || ''} ${escHtml(p.category_name || '')}</span></td>
         <td>
-          <div class="sku-code">${escHtml(p.sku)}</div>
-          ${p.serial_no ? `<div class="serial-num">${escHtml(p.serial_no)}</div>` : ''}
+          <div class="sku-code">${escHtml(p.serial_no || '—')}</div>
         </td>
         <td>
           <div class="mrp-val">₹${Number(p.mrp).toLocaleString('en-IN')}</div>
@@ -363,7 +362,7 @@ async function saveStockModal() {
 // ─── Add / Edit Product ───────────────────────────────────────────────────────
 function resetAddForm() {
   document.getElementById('formTitle').textContent = 'Add Product';
-  document.getElementById('formSubtitle').textContent = 'Enter Serial No. & SKU manually — barcode is generated from Serial No.';
+  document.getElementById('formSubtitle').textContent = 'Enter Serial No. manually — used as the barcode on the label';
   document.getElementById('editId').value = '';
   document.getElementById('btnAddAnother').style.display = '';
   clearForm();
@@ -391,7 +390,7 @@ async function saveProduct() {
     }
   } catch (e) {
     if (e.status === 409) {
-      showToast(e.message || 'Serial No. or SKU already exists', 'error');
+      showToast(e.message || 'Serial No. already exists', 'error');
     } else {
       showToast('Failed to save product', 'error');
     }
@@ -411,7 +410,7 @@ async function saveAndAddAnother() {
     document.getElementById('f-serial').focus();
   } catch (e) {
     if (e.status === 409) {
-      showToast(e.message || 'Serial No. or SKU already exists', 'error');
+      showToast(e.message || 'Serial No. already exists', 'error');
     } else {
       showToast('Failed to save product', 'error');
     }
@@ -421,14 +420,12 @@ async function saveAndAddAnother() {
 function collectForm() {
   let valid = true;
   const serial_no = document.getElementById('f-serial').value.trim();
-  const sku       = document.getElementById('f-sku').value.trim();
   const name      = document.getElementById('f-name').value.trim();
   const brand     = document.getElementById('f-brand').value.trim();
   const mrpRaw    = document.getElementById('f-mrp').value;
   const mrp       = parseFloat(mrpRaw);
 
   if (!serial_no) { setFieldError('row-serial', 'err-serial', 'Serial No. is required'); valid = false; }
-  if (!sku)       { setFieldError('row-sku',    'err-sku',    'SKU is required');         valid = false; }
   if (!name)      { setFieldError('row-name',   'err-name',   'Product name is required'); valid = false; }
   if (!mrpRaw || isNaN(mrp) || mrp <= 0) {
     setFieldError('row-mrp', 'err-mrp', 'Enter a valid MRP greater than 0');
@@ -440,7 +437,7 @@ function collectForm() {
   const sellingPrice = (!isNaN(spRaw) && spRaw > 0) ? spRaw : mrp;
 
   return {
-    serial_no, sku, name, brand,
+    serial_no, name, brand,
     category_id: document.getElementById('f-cat').value,
     mrp, selling_price: sellingPrice,
     model_no: document.getElementById('f-model').value.trim(),
@@ -504,7 +501,6 @@ async function editProduct(id) {
   document.getElementById('f-hsn').value = p.hsn_code || '';
   document.getElementById('f-desc').value = p.description || '';
   document.getElementById('f-serial').value = p.serial_no || '';
-  document.getElementById('f-sku').value = p.sku || '';
   // Hide "Add Another" on edit
   document.getElementById('btnAddAnother').style.display = 'none';
   updatePriceHint();
@@ -512,13 +508,13 @@ async function editProduct(id) {
 }
 
 function clearForm() {
-  ['f-serial', 'f-sku', 'f-name', 'f-brand', 'f-model', 'f-color', 'f-size', 'f-desc', 'f-hsn', 'f-mrp', 'f-price', 'f-stock'].forEach(id => {
+  ['f-serial', 'f-name', 'f-brand', 'f-model', 'f-color', 'f-size', 'f-desc', 'f-hsn', 'f-mrp', 'f-price', 'f-stock'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('f-gst').value = '18';
   document.getElementById('editId').value = '';
-  ['row-serial', 'row-sku', 'row-name', 'row-brand', 'row-mrp'].forEach(id => clearFieldError(id));
+  ['row-serial', 'row-name', 'row-brand', 'row-mrp'].forEach(id => clearFieldError(id));
   const hint = document.getElementById('priceHint');
   if (hint) { hint.textContent = 'Leave blank to use MRP'; hint.style.color = ''; }
 }
@@ -544,7 +540,6 @@ async function viewProduct(id) {
   document.getElementById('modalTitle').textContent = p.name;
   const rows = [
     ['Serial No.', p.serial_no || '—', 'mono'],
-    ['SKU Code', p.sku, 'accent'],
     ['Brand', p.brand],
     ['Category', `${p.category_icon || ''} ${p.category_name || ''}`],
     ['Model No.', p.model_no],
@@ -560,7 +555,7 @@ async function viewProduct(id) {
   ];
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-barcode">
-      <img src="/api/qr/${encodeURIComponent(p.serial_no || p.sku)}?scale=5" alt="QR Code"
+      <img src="/api/qr/${encodeURIComponent(p.serial_no)}?scale=5" alt="QR Code"
         style="width:110px;height:110px;image-rendering:pixelated;display:block;margin:0 auto 4px"
         onerror="this.style.display='none'" />
       <div class="modal-barcode-num" style="font-family:monospace;font-size:11px;color:#374151">${escHtml(p.serial_no || '—')}</div>
@@ -693,7 +688,7 @@ function renderQueue() {
       <div class="queue-item">
         <div class="qinfo">
           <div class="qname" title="${escHtml(q.product.name)}">${escHtml(q.product.name)}</div>
-          <div class="qsku">${q.product.serial_no ? escHtml(q.product.serial_no) + ' · ' : ''}${escHtml(q.product.sku)}</div>
+          <div class="qsku">${escHtml(q.product.serial_no || '—')}</div>
           <div class="qprice">${priceStr}</div>
         </div>
         <div class="qty-wrap">
@@ -739,7 +734,7 @@ async function searchForQueue(term) {
         <div class="qsr-item" onclick="addToQueueFromSearch('${p.id}')">
           <div class="qsr-info">
             <div class="qsr-name">${escHtml(p.name)}</div>
-            <div class="qsr-meta">${escHtml(p.sku)} · ₹${Number(p.mrp).toLocaleString('en-IN')} · Stock: ${p.stock}</div>
+            <div class="qsr-meta">${escHtml(p.serial_no || '—')} · ₹${Number(p.mrp).toLocaleString('en-IN')} · Stock: ${p.stock}</div>
           </div>
           <span class="qsr-add">${inQueue ? '+ More' : '+ Add'}</span>
         </div>
@@ -812,7 +807,7 @@ async function generatePreview() {
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
     const spFmt  = hasDiscount ? `  SP:${Number(p.selling_price).toFixed(2)}` : '';
 
-    const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
+    const barcodeCode = encodeURIComponent(p.serial_no);
     // scale=3 → high-res PNG that thermal printer can render crisply
     const barcodeUrl = `/api/barcode/${barcodeCode}?scale=3&height=${spec.barcodeH}`;
 
@@ -825,7 +820,7 @@ async function generatePreview() {
         ${detail ? `<div class="l-detail">${escHtml(detail)}</div>` : ''}
         ${showMrp ? `<div class="l-mrp-line">${escHtml(mrpFmt + spFmt)}</div>` : ''}
         <div class="l-barcode"><img src="${barcodeUrl}" alt="barcode" loading="lazy" /></div>
-        <div class="l-serial">${escHtml(p.serial_no || p.sku)}</div>
+        <div class="l-serial">${escHtml(p.serial_no)}</div>
         ${showMrp && showGst && p.gst_rate ? `<div class="l-inc">Incl. ${p.gst_rate}% GST${p.hsn_code ? ' · HSN ' + escHtml(p.hsn_code) : ''}</div>` : ''}
       </div>
     `;
@@ -840,7 +835,7 @@ async function generatePreview() {
     const header = p.name.toUpperCase();
     const mrpFmt = `MRP:${Number(p.mrp).toFixed(2)}`;
     const spFmt  = hasDiscount ? `  SP:${Number(p.selling_price).toFixed(2)}` : '';
-    const barcodeCode = encodeURIComponent(p.serial_no || p.sku);
+    const barcodeCode = encodeURIComponent(p.serial_no);
     const barcodeUrl = `/api/barcode/${barcodeCode}?scale=3&height=${spec.barcodeH}`;
     return `
       <div class="lbl">
@@ -848,7 +843,7 @@ async function generatePreview() {
         ${detail ? `<div class="l-detail">${escHtml(detail)}</div>` : ''}
         ${showMrp ? `<div class="l-mrp-line">${escHtml(mrpFmt + spFmt)}</div>` : ''}
         <div class="l-barcode"><img src="${barcodeUrl}" alt="barcode" /></div>
-        <div class="l-serial">${escHtml(p.serial_no || p.sku)}</div>
+        <div class="l-serial">${escHtml(p.serial_no)}</div>
         ${showMrp && showGst && p.gst_rate ? `<div class="l-inc">Incl. ${p.gst_rate}% GST${p.hsn_code ? ' · HSN ' + escHtml(p.hsn_code) : ''}</div>` : ''}
       </div>
     `;
